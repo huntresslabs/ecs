@@ -68,6 +68,7 @@ class Field(TypedDict, total=False):
     name: str
     node_name: str
     normalize: List[str]
+    # normalizer: str
     norms: bool
     otel: List[OTelMapping]
     otel_reuse: List[OTelReuseMapping]
@@ -92,6 +93,8 @@ class SchemaDetails(TypedDict, total=False):
     prefix: str
     reusable: Reuseable
     root: bool
+    # root_type: str
+    settings: Dict[str, str]
     title: str
 
 
@@ -109,6 +112,7 @@ class FieldNestedEntry(TypedDict, total=False):
     name: str
     node_name: str
     prefix: str
+    settings: Dict[str, str]
     short: str
     title: str
     type: str
