@@ -296,7 +296,7 @@ def merge_fields(
         if "schema_details" in b[key]:
             asd = a[key]["schema_details"]
             bsd = b[key]["schema_details"]
-            if "reusable" in b[key]["schema_details"]:
+            if "reusable" in bsd:
                 asd.setdefault("reusable", {})
                 if "top_level" in bsd["reusable"]:
                     asd["reusable"]["top_level"] = bsd["reusable"]["top_level"]
@@ -308,8 +308,11 @@ def merge_fields(
                 asd["reusable"]["expected"].extend(bsd["reusable"]["expected"])
                 bsd.pop("reusable")
                 asd.setdefault("settings", {})
-                if "settings" in bsd["settings"]:
-                    asd["settings"] = merge_fields(asd["settings"], bsd["settings"])
+            if "settings" in bsd:
+                asd.setdefault("settings", {})
+                asd["settings"] = merge_fields(asd["settings"], bsd["settings"])
+                # Prevents bsd["settings"] overwritting the merging we just did in the update below
+                del bsd["settings"]
             asd.update(bsd)
         # merge nested fields
         if "fields" in b[key]:
