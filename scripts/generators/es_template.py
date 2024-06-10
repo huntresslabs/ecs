@@ -17,12 +17,7 @@
 
 import json
 import sys
-from typing import (
-    Dict,
-    List,
-    Optional,
-    Union
-)
+from typing import Dict, List, Optional, Union
 
 from os.path import join
 
@@ -40,38 +35,59 @@ def generate(
     ecs_version: str,
     out_dir: str,
     mapping_settings_file: str,
-    template_settings_file: str
+    template_settings_file: str,
 ) -> None:
     """This generates all artifacts for the composable template approach"""
     all_component_templates(ecs_nested, ecs_version, out_dir)
     component_names = component_name_convention(ecs_version, ecs_nested)
-    save_composable_template(ecs_version, component_names, out_dir, mapping_settings_file, template_settings_file)
+    save_composable_template(
+        ecs_version,
+        component_names,
+        out_dir,
+        mapping_settings_file,
+        template_settings_file,
+    )
 
 
-def save_composable_template(ecs_version, component_names, out_dir, mapping_settings_file, template_settings_file):
+def save_composable_template(
+    ecs_version, component_names, out_dir, mapping_settings_file, template_settings_file
+):
     mappings_section = mapping_settings(mapping_settings_file)
-    template = template_settings(ecs_version, mappings_section, template_settings_file, component_names=component_names)
+    template = template_settings(
+        ecs_version,
+        mappings_section,
+        template_settings_file,
+        component_names=component_names,
+    )
 
     filename = join(out_dir, "elasticsearch/composable/template.json")
     save_json(filename, template)
 
 
 def all_component_templates(
-    ecs_nested: Dict[str, FieldNestedEntry],
-    ecs_version: str,
-    out_dir: str
+    ecs_nested: Dict[str, FieldNestedEntry], ecs_version: str, out_dir: str
 ) -> None:
     """Generate one component template per field set"""
-    component_dir: str = join(out_dir, 'elasticsearch/composable/component')
+    component_dir: str = join(out_dir, "elasticsearch/composable/component")
     ecs_helpers.make_dirs(component_dir)
 
-    for (fieldset_name, fieldset) in ecs_helpers.remove_top_level_reusable_false(ecs_nested).items():
+    for fieldset_name, fieldset in ecs_helpers.remove_top_level_reusable_false(
+        ecs_nested
+    ).items():
         field_mappings = {}
-        for (flat_name, field) in fieldset['fields'].items():
-            name_parts = flat_name.split('.')
+        for flat_name, field in fieldset["fields"].items():
+            name_parts = flat_name.split(".")
             dict_add_nested(field_mappings, name_parts, entry_for(field))
+        fieldset_settings = fieldset.get("settings", None)
 
-        save_component_template(fieldset_name, field['level'], ecs_version, component_dir, field_mappings)
+        save_component_template(
+            fieldset_name,
+            field["level"],
+            ecs_version,
+            component_dir,
+            field_mappings,
+            fieldset_settings,
+        )
 
 
 def save_component_template(
@@ -79,32 +95,38 @@ def save_component_template(
     field_level: str,
     ecs_version: str,
     out_dir: str,
-    field_mappings: Dict
+    field_mappings: Dict,
+    fieldset_settings: [Dict, None],
 ) -> None:
     filename: str = join(out_dir, template_name) + ".json"
-    reference_url: str = "https://www.elastic.co/guide/en/ecs/current/ecs-{}.html".format(template_name)
+    reference_url: str = (
+        "https://www.elastic.co/guide/en/ecs/current/ecs-{}.html".format(template_name)
+    )
 
     template: Dict = {
-        'template': {'mappings': {'properties': field_mappings}},
-        '_meta': {
-            'ecs_version': ecs_version,
-        }
+        "template": {"mappings": {"properties": field_mappings}},
+        "_meta": {
+            "ecs_version": ecs_version,
+        },
     }
+    if fieldset_settings is not None:
+        template["template"]["settings"] = fieldset_settings
 
     """Only generate a documentation link for ECS fields"""
-    if (field_level != 'custom'):
-        template['_meta']['documentation'] = reference_url
+    if field_level != "custom":
+        template["_meta"]["documentation"] = reference_url
 
     save_json(filename, template)
 
 
 def component_name_convention(
-    ecs_version: str,
-    ecs_nested: Dict[str, FieldNestedEntry]
+    ecs_version: str, ecs_nested: Dict[str, FieldNestedEntry]
 ) -> List[str]:
-    version: str = ecs_version.replace('+', '-')
+    version: str = ecs_version.replace("+", "-")
     names: List[str] = []
-    for (fieldset_name, fieldset) in ecs_helpers.remove_top_level_reusable_false(ecs_nested).items():
+    for fieldset_name, fieldset in ecs_helpers.remove_top_level_reusable_false(
+        ecs_nested
+    ).items():
         names.append("ecs_{}_{}".format(version, fieldset_name.lower()))
     return names
 
@@ -117,29 +139,30 @@ def generate_legacy(
     ecs_version: str,
     out_dir: str,
     mapping_settings_file: str,
-    template_settings_file: str
+    template_settings_file: str,
 ) -> None:
     """Generate the legacy index template"""
     field_mappings = {}
     for flat_name in sorted(ecs_flat):
         field = ecs_flat[flat_name]
-        name_parts = flat_name.split('.')
+        name_parts = flat_name.split(".")
         dict_add_nested(field_mappings, name_parts, entry_for(field))
 
     mappings_section: Dict = mapping_settings(mapping_settings_file)
-    mappings_section['properties'] = field_mappings
+    mappings_section["properties"] = field_mappings
 
-    generate_legacy_template_version(ecs_version, mappings_section, out_dir, template_settings_file)
+    generate_legacy_template_version(
+        ecs_version, mappings_section, out_dir, template_settings_file
+    )
 
 
 def generate_legacy_template_version(
-    ecs_version: str,
-    mappings_section: Dict,
-    out_dir: str,
-    template_settings_file: str
+    ecs_version: str, mappings_section: Dict, out_dir: str, template_settings_file: str
 ) -> None:
-    ecs_helpers.make_dirs(join(out_dir, 'elasticsearch', "legacy"))
-    template: Dict = template_settings(ecs_version, mappings_section, template_settings_file, is_legacy=True)
+    ecs_helpers.make_dirs(join(out_dir, "elasticsearch", "legacy"))
+    template: Dict = template_settings(
+        ecs_version, mappings_section, template_settings_file, is_legacy=True
+    )
 
     filename: str = join(out_dir, "elasticsearch/legacy/template.json")
     save_json(filename, template)
@@ -148,64 +171,63 @@ def generate_legacy_template_version(
 # Common helpers
 
 
-def dict_add_nested(
-    dct: Dict,
-    name_parts: List[str],
-    value: Dict
-) -> None:
+def dict_add_nested(dct: Dict, name_parts: List[str], value: Dict) -> None:
     current_nesting: str = name_parts[0]
     rest_name_parts: List[str] = name_parts[1:]
     if len(rest_name_parts) > 0:
         dct.setdefault(current_nesting, {})
-        dct[current_nesting].setdefault('properties', {})
+        dct[current_nesting].setdefault("properties", {})
 
-        dict_add_nested(
-            dct[current_nesting]['properties'],
-            rest_name_parts,
-            value)
+        dict_add_nested(dct[current_nesting]["properties"], rest_name_parts, value)
 
     else:
-        if current_nesting in dct and 'type' in value and 'object' == value['type']:
+        if current_nesting in dct and "type" in value and "object" == value["type"]:
             return
         dct[current_nesting] = value
 
 
 def entry_for(field: Field) -> Dict:
-    field_entry: Dict = {'type': field['type']}
+    field_entry: Dict = {"type": field["type"]}
     try:
-        if field['type'] == 'object' or field['type'] == 'nested':
-            if 'enabled' in field and not field['enabled']:
-                ecs_helpers.dict_copy_existing_keys(field, field_entry, ['enabled'])
+        if field["type"] == "object" or field["type"] == "nested":
+            if "enabled" in field and not field["enabled"]:
+                ecs_helpers.dict_copy_existing_keys(field, field_entry, ["enabled"])
         # the index field is only valid for field types that are not object and nested
-        elif 'index' in field and not field['index']:
-            ecs_helpers.dict_copy_existing_keys(field, field_entry, ['index', 'doc_values'])
+        elif "index" in field and not field["index"]:
+            ecs_helpers.dict_copy_existing_keys(
+                field, field_entry, ["index", "doc_values"]
+            )
 
-        if field['type'] == 'keyword' or field['type'] == 'flattened':
-            ecs_helpers.dict_copy_existing_keys(field, field_entry, ['ignore_above'])
-        elif field['type'] == 'constant_keyword':
-            ecs_helpers.dict_copy_existing_keys(field, field_entry, ['value'])
-        elif field['type'] == 'text':
-            ecs_helpers.dict_copy_existing_keys(field, field_entry, ['norms'])
-        elif field['type'] == 'alias':
-            ecs_helpers.dict_copy_existing_keys(field, field_entry, ['path'])
-        elif field['type'] == 'scaled_float':
-            ecs_helpers.dict_copy_existing_keys(field, field_entry, ['scaling_factor'])
+        if field["type"] == "keyword" or field["type"] == "flattened":
+            ecs_helpers.dict_copy_existing_keys(field, field_entry, ["ignore_above"])
+        elif field["type"] == "constant_keyword":
+            ecs_helpers.dict_copy_existing_keys(field, field_entry, ["value"])
+        elif field["type"] == "text":
+            ecs_helpers.dict_copy_existing_keys(field, field_entry, ["norms"])
+        elif field["type"] == "alias":
+            ecs_helpers.dict_copy_existing_keys(field, field_entry, ["path"])
+        elif field["type"] == "scaled_float":
+            ecs_helpers.dict_copy_existing_keys(field, field_entry, ["scaling_factor"])
 
-        if 'multi_fields' in field:
-            field_entry['fields'] = {}
-            for mf in field['multi_fields']:
-                mf_type = mf['type']
-                mf_entry = {'type': mf_type}
-                if mf_type == 'keyword':
-                    ecs_helpers.dict_copy_existing_keys(mf, mf_entry, ['normalizer', 'ignore_above'])
-                elif mf_type == 'text':
-                    ecs_helpers.dict_copy_existing_keys(mf, mf_entry, ['norms', 'analyzer'])
-                if 'parameters' in mf:
-                    mf_entry.update(mf['parameters'])
-                field_entry['fields'][mf['name']] = mf_entry
+        if "multi_fields" in field:
+            field_entry["fields"] = {}
+            for mf in field["multi_fields"]:
+                mf_type = mf["type"]
+                mf_entry = {"type": mf_type}
+                if mf_type == "keyword":
+                    ecs_helpers.dict_copy_existing_keys(
+                        mf, mf_entry, ["normalizer", "ignore_above"]
+                    )
+                elif mf_type == "text":
+                    ecs_helpers.dict_copy_existing_keys(
+                        mf, mf_entry, ["norms", "analyzer"]
+                    )
+                if "parameters" in mf:
+                    mf_entry.update(mf["parameters"])
+                field_entry["fields"][mf["name"]] = mf_entry
 
-        if 'parameters' in field:
-            field_entry.update(field['parameters'])
+        if "parameters" in field:
+            field_entry.update(field["parameters"])
 
     except KeyError as ex:
         print("Exception {} occurred for field {}".format(ex, field))
@@ -227,7 +249,7 @@ def template_settings(
     mappings_section: Dict,
     template_settings_file: Union[str, None],
     is_legacy: Optional[bool] = False,
-    component_names: Optional[List[str]] = None
+    component_names: Optional[List[str]] = None,
 ) -> Dict:
     if template_settings_file:
         with open(template_settings_file) as f:
@@ -238,7 +260,9 @@ def template_settings(
         else:
             template = default_template_settings(ecs_version)
 
-    finalize_template(template, ecs_version, is_legacy, mappings_section, component_names)
+    finalize_template(
+        template, ecs_version, is_legacy, mappings_section, component_names
+    )
 
     return template
 
@@ -248,23 +272,23 @@ def finalize_template(
     ecs_version: str,
     is_legacy: bool,
     mappings_section: Dict,
-    component_names: List[str]
+    component_names: List[str],
 ) -> None:
     if is_legacy:
         if mappings_section:
-            template['mappings'] = mappings_section
+            template["mappings"] = mappings_section
 
             # _meta can't be at template root in legacy templates, so moving back to mappings section
             # if present
-            if '_meta' in template:
-                mappings_section['_meta'] = template.pop('_meta')
+            if "_meta" in template:
+                mappings_section["_meta"] = template.pop("_meta")
 
     else:
-        template['template']['mappings'] = mappings_section
-        template['composed_of'] = component_names
-        template['_meta'] = {
+        template["template"]["mappings"] = mappings_section
+        template["composed_of"] = component_names
+        template["_meta"] = {
             "ecs_version": ecs_version,
-            "description": "Sample composable template that includes all ECS fields"
+            "description": "Sample composable template that includes all ECS fields",
         }
 
 
@@ -274,7 +298,7 @@ def save_json(file: str, data: Dict) -> None:
         open_mode = "w"
     with open(file, open_mode) as jsonfile:
         json.dump(data, jsonfile, indent=2, sort_keys=True)
-        jsonfile.write('\n')
+        jsonfile.write("\n")
 
 
 def default_template_settings(ecs_version: str) -> Dict:
@@ -282,21 +306,17 @@ def default_template_settings(ecs_version: str) -> Dict:
         "index_patterns": ["try-ecs-*"],
         "_meta": {
             "ecs_version": ecs_version,
-            "description": "Sample composable template that includes all ECS fields"
+            "description": "Sample composable template that includes all ECS fields",
         },
         "priority": 1,  # Very low, as this is a sample template
         "template": {
             "settings": {
                 "index": {
                     "codec": "best_compression",
-                    "mapping": {
-                        "total_fields": {
-                            "limit": 2000
-                        }
-                    }
+                    "mapping": {"total_fields": {"limit": 2000}},
                 }
             },
-        }
+        },
     }
 
 
@@ -307,14 +327,10 @@ def default_legacy_template_settings(ecs_version: str) -> Dict:
         "order": 1,
         "settings": {
             "index": {
-                "mapping": {
-                    "total_fields": {
-                        "limit": 10000
-                    }
-                },
-                "refresh_interval": "5s"
+                "mapping": {"total_fields": {"limit": 10000}},
+                "refresh_interval": "5s",
             }
-        }
+        },
     }
 
 
@@ -324,12 +340,9 @@ def default_mapping_settings() -> Dict:
         "dynamic_templates": [
             {
                 "strings_as_keyword": {
-                    "mapping": {
-                        "ignore_above": 1024,
-                        "type": "keyword"
-                    },
-                    "match_mapping_type": "string"
+                    "mapping": {"ignore_above": 1024, "type": "keyword"},
+                    "match_mapping_type": "string",
                 }
             }
-        ]
+        ],
     }
