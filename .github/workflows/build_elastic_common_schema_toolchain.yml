@@ -31,20 +31,22 @@ jobs:
       - name: Debug
         run: 'echo "Current branch: ${{ github.ref_name }}"'
 
-      - name: Build
-        if: github.ref_name != 'main'
+      # Always push with the branch name, this allows for external testing
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with: &buildArgs
-          context: "{{defaultContext}}:docker/elastic-common-schema-toolchain"
-          tags: 068738303278.dkr.ecr.us-east-1.amazonaws.com/elastic-common-schema-toolchain:latest
+          context: "{{defaultContext}}:docker"
+          tags: 068738303278.dkr.ecr.us-east-1.amazonaws.com/elastic-common-schema-toolchain:${{ github.ref_name }}
           cache-from: type=registry,ref=068738303278.dkr.ecr.us-east-1.amazonaws.com/elastic-common-schema-toolchain:cache
           cache-to: mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=068738303278.dkr.ecr.us-east-1.amazonaws.com/elastic-common-schema-toolchain:cache
+          push: true
           build-args: |
             BRANCH=${{ github.ref_name }}
 
-      - name: Build and Push
+      # Once it's in main, we want to update to the latest stable version
+      - name: Push Latest Tag
         if: github.ref_name == 'main'
         uses: docker/build-push-action@v5
         with:
           <<: *buildArgs
-          push: true
+          tags: 068738303278.dkr.ecr.us-east-1.amazonaws.com/elastic-common-schema-toolchain:latest
