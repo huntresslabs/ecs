@@ -1,5 +1,4 @@
 FROM ubuntu:latest
-ARG ECS_VERSION="8.11.0"
 ARG BRANCH=main
 RUN mkdir /ecs && apt update && apt install -y git python3-pip && apt clean
 WORKDIR /ecs
