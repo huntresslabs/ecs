@@ -307,7 +307,6 @@ def merge_fields(
                 asd["reusable"].setdefault("expected", [])
                 asd["reusable"]["expected"].extend(bsd["reusable"]["expected"])
                 bsd.pop("reusable")
-                asd.setdefault("settings", {})
             if "settings" in bsd:
                 asd.setdefault("settings", {})
                 asd["settings"] = merge_fields(asd["settings"], bsd["settings"])
