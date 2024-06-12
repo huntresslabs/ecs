@@ -578,7 +578,6 @@ class TestSchemaLoader(unittest.TestCase):
                         "top_level": True,
                         "expected": ["normal.location", "a_new.location"],
                     },
-                    "settings": {},
                 },
                 "field_details": {"name": "foo", "type": "group"},
                 "fields": {
