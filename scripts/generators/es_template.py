@@ -79,6 +79,8 @@ def all_component_templates(
             name_parts = flat_name.split(".")
             dict_add_nested(field_mappings, name_parts, entry_for(field))
         fieldset_settings = fieldset.get("settings", None)
+        if fieldset.get("type", "group") in ["object", "nested"]:
+            field_mappings["type"] = fieldset.get("type")
 
         save_component_template(
             fieldset_name,
