@@ -29,7 +29,7 @@ Optional field set attributes:
 - group (default 2): To sort field sets against one another.
   For example the "base" field set has group=1 and is the first listed in the documentation.
   All others have group=2 and are therefore after "base" (sorted alphabetically).
-- type (ignored): at this level, should always be `group`
+- type: The fieldset type. Can be 'nested' or 'object'.
 - reusable (optional): Used to identify which field sets are expected to be reused in multiple places.
   See "Field set reuse" for details.
 - short_override: Used to override the top-level fieldset's short description when nesting.
