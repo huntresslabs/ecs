@@ -184,7 +184,7 @@ def deep_nesting_representation(
 
         # Schema-only details. Not present on other nested field groups.
         schema_details: SchemaDetails = {}
-        for schema_key in ["root", "group", "reusable", "title", "settings"]:
+        for schema_key in ["root", "group", "reusable", "title", "settings", "type"]:
             if schema_key in flat_schema:
                 schema_details[schema_key] = flat_schema.pop(schema_key)
 
