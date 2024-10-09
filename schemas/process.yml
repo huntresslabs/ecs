@@ -204,6 +204,14 @@
           Binaries that are shipped by the operating system are defined as platform binaries, this value is then set to true.
       beta: This field is beta and subject to change.
 
+    - name: platform_binary
+      level: extended
+      type: boolean
+      short: Indicates whether this process executable is a default platform binary shipped with the operating system.
+      description: >
+          Binaries that are shipped by the operating system are defined as platform binaries, this value is then set to true.
+      beta: This field is beta and subject to change.
+
     - name: title
       level: extended
       type: keyword
