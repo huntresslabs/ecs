@@ -61,6 +61,10 @@
         short_override: An array of previous executions for the process, including the initial fork. Only executable and args are set.
         normalize:
           - array
+      - at: process
+        as: responsible
+        short_override: Responsible process in macOS tracks the originating process of an app, key for understanding permissions and hierarchy.
+        beta: This field is beta and subject to change.
 
   fields:
 
