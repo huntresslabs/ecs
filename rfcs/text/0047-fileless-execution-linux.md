@@ -1,8 +1,8 @@
-# 0000: Name of RFC
+# 0047: Fileless execution on Linux
 <!-- Leave this ID at 0000. The ECS team will assign a unique, contiguous RFC number upon merging the initial stage of this RFC. -->
 
 - Stage: **0 (strawperson)** <!-- Update to reflect target stage. See https://elastic.github.io/ecs/stages.html -->
-- Date: **TBD** <!-- The ECS team sets this date at merge time. This is the date of the latest stage advancement. -->
+- Date: **2024-09-26** <!-- The ECS team sets this date at merge time. This is the date of the latest stage advancement. -->
 
 <!--
 As you work on your RFC, use the "Stage N" comments to guide you in what you should focus on, for the stage you're targeting.
@@ -12,6 +12,28 @@ Feel free to remove these comments as you go along.
 <!--
 Stage 0: Provide a high level summary of the premise of these changes. Briefly describe the nature, purpose, and impact of the changes. ~2-5 sentences.
 -->
+
+This RFC proposes adding new fields and event types to enhance the detection of fileless malware execution and related malicious activities on Linux systems.
+
+The new fields include:
+ * file.is_memfd - Indicates if the file is an anonymous file descriptor (memfd) created using the memfd_create system call.
+ * file.is_shmem - Indicates if the file is a POSIX shared memory object created using the shm_open system call, typically located in /dev/shm.
+ * process.is_setuid - Indicates if the process has the setuid bit set, allowing it to run with the privileges of its owner.
+ * process.is_setgid - Indicates if the process has the setgid bit set, allowing it to run with the privileges of its group.
+ * process.is_memfd - Indicates if the process was executed from a memory file descriptor (memfd).
+ * process.inode_nlink - Number of links to the inode of the process executable file, obtained from the i_nlink variable in the inode structure.
+
+New process event types:
+ * memfd_create
+ * shmget (SystemV shared memory API)
+ * ptrace
+ * load_module
+
+New file event types:
+ * memfd_open
+ * shmem_open
+
+These additions will enable the detection and investigation of various malware execution techniques, such as executing code from memory file descriptors (memfd), hiding malicious binaries in shared memory objects (shm_open and shmget), debugging other processes for code injection (ptrace), and loading kernel modules for rootkits (load_module). The proposed fields also cover privilege escalation using setuid/setgid binaries.
 
 <!--
 Stage 1: If the changes include field additions or modifications, please create a folder titled as the RFC number under rfcs/text/. This will be where proposed schema changes as standalone YAML files or extended example mappings and larger source documents will go as the RFC is iterated upon.
@@ -38,6 +60,8 @@ Stage 1: Describe at a high-level how these field changes will be used in practi
 -->
 
 ## Source data
+
+The data can be collected by monitoring system calls and events on Linux hosts using kernel instrumentation techniques like eBPF or kprobes.
 
 <!--
 Stage 1: Provide a high-level description of example sources of data. This does not yet need to be a concrete example of a source document, but instead can simply describe a potential source (e.g. nginx access log). This will ultimately be fleshed out to include literal source examples in a future stage. The goal here is to identify practical sources for these fields in the real world. ~1-3 sentences or unordered list.
@@ -79,7 +103,7 @@ Stage 3: Document resolutions for all existing concerns. Any new concerns should
 
 The following are the people that consulted on the contents of this RFC.
 
-* TBD | author
+ * @stanek-michal    | author
 
 <!--
 Who will be or has been consulted on the contents of this RFC? Identify authorship and sponsorship, and optionally identify the nature of involvement of others. Link to GitHub aliases where possible. This list will likely change or grow stage after stage.
@@ -101,8 +125,6 @@ e.g.:
 ### RFC Pull Requests
 
 <!-- An RFC should link to the PRs for each of it stage advancements. -->
-
-* Stage 0: https://github.com/elastic/ecs/pull/NNN
 
 <!--
 * Stage 1: https://github.com/elastic/ecs/pull/NNN
