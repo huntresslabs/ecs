@@ -184,18 +184,21 @@ def deep_nesting_representation(
 
         # Schema-only details. Not present on other nested field groups.
         schema_details: SchemaDetails = {}
-        for schema_key in ["root", "group", "reusable", "title", "settings"]:
+        for schema_key in ["root", "group", "reusable", "title", "settings", "aliases"]:
             if schema_key in flat_schema:
                 schema_details[schema_key] = flat_schema.pop(schema_key)
 
         nested_schema = nest_fields(flat_schema.pop("fields", []))
         # Re-assemble new structure
-        deeply_nested[name] = {
+        ecs_struct = {
             "schema_details": schema_details,
             # What's still in flat_schema is the field_details for the field set itself
             "field_details": flat_schema,
             "fields": nested_schema["fields"],
         }
+        deeply_nested[name] = ecs_struct
+        for alias in schema_details.get("aliases", []):
+            deeply_nested[alias] = ecs_struct
     return deeply_nested
 
 
