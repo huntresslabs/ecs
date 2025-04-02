@@ -1,6 +1,8 @@
 #!/bin/bash
 
-python3 scripts/generator.py --subset /data_stream/subset --out /data_stream --include /include /data_stream/include
+OTEL_VERSION=${OTEL_VERSION:-v1.29.0}
+
+python3 scripts/generator.py --subset /data_stream/subset --out /data_stream --include /include /data_stream/include  --semconv-version ${OTEL_VERSION}
 code=$?
 if [ $code -ne 0 ]; then
     exit $code
