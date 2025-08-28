@@ -99,12 +99,14 @@ def ordered_dict_insert(
 
 def safe_merge_dicts(a: Dict[Any, Any], b: Dict[Any, Any]) -> Dict[Any, Any]:
     """Merges two dictionaries into one. If duplicate keys are detected a ValueError is raised."""
+    # Move deep copy to after the duplicate check.
+    # Avoids performing deep copy only to throw it a way if a duplicate key exists.
+    # Removed python for loop and instead handled with CPython set() implimenation to compare sets.
+    # Returns all duplicate keys instead of just the first encountered duplicate in the previous implimentation.
+    duplicate_keys = set(a) & set(b)
+    if duplicate_keys:
+        raise ValueError('Duplicate keys found when merging dictionaries: {dupliacte_keys}')
     c = deepcopy(a)
-    for key in b:
-        if key not in c:
-            c[key] = b[key]
-        else:
-            raise ValueError('Duplicate key found when merging dictionaries: {0}'.format(key))
     return c
 
 
